@@ -200,6 +200,11 @@ const Cell = memo(
       });
     };
 
+    const handleClick = (event) => {
+      event.preventDefault();
+      adjustCell();
+    };
+
     const handleMouseDown = (event) => {
       event.preventDefault();
       adjustCell();
@@ -243,7 +248,7 @@ const Cell = memo(
           )}
           <div
             className={classes.cellClick}
-            onClick={handleMouseDown}
+            onClick={handleClick}
             onMouseDown={handleMouseDown}
             onTouchStart={handleMouseDown}
             onMouseUp={handleMouseUp}
