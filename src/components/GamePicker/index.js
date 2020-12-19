@@ -154,15 +154,6 @@ export default function GamePicker() {
       })),
     },
     {
-      label: 'Merry Christmas',
-      choices: [
-        {
-          label: '1',
-          onClick: () => createFromCollection(christmas.snowflake),
-        },
-      ],
-    },
-    {
       label: 'Random',
       choices: [
         {
