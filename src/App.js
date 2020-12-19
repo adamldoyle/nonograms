@@ -18,7 +18,8 @@ const useStyles = makeStyles((theme) => ({
   link: { margin: theme.spacing(1, 1.5) },
   toolbarOffset: theme.mixins.toolbar,
   container: {
-    marginTop: '20px',
+    marginTop: 20,
+    overflow: 'scroll',
   },
 }));
 

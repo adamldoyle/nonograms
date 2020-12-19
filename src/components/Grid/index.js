@@ -58,10 +58,11 @@ const useCellStyles = makeStyles({
   },
   cellClick: ({ cellDimension }) => ({
     position: 'absolute',
-    top: 0,
-    left: 0,
-    width: cellDimension,
-    height: cellDimension,
+    top: 2,
+    left: 2,
+    width: cellDimension - 4,
+    height: cellDimension - 4,
+    touchAction: 'none',
   }),
   xIcon: {
     width: '100%',
@@ -70,6 +71,9 @@ const useCellStyles = makeStyles({
 });
 
 const useGridStyles = makeStyles({
+  grid: {
+    padding: 20,
+  },
   topHeaderCell: {
     verticalAlign: 'bottom',
     textAlign: 'center',
@@ -306,7 +310,7 @@ export default memo(function Grid({
   };
 
   return (
-    <table cellPadding={0} cellSpacing={0}>
+    <table cellPadding={0} cellSpacing={0} className={classes.grid}>
       <tbody onTouchMove={handleMouseOver}>
         <tr>
           <td style={{ verticalAlign: 'bottom' }}>
