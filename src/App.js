@@ -1,12 +1,15 @@
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import Container from '@material-ui/core/Container';
 import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import Link from '@material-ui/core/Link';
+import TextLink from '@material-ui/core/Link';
 import { makeStyles } from '@material-ui/core/styles';
 import Game from './components/Game';
+import GamePicker from './components/GamePicker';
+import GridBuilder from './components/GridBuilder';
 
 const useStyles = makeStyles((theme) => ({
   appBar: { borderBottom: `1px solid ${theme.palette.divider}` },
@@ -22,10 +25,8 @@ const useStyles = makeStyles((theme) => ({
 function App() {
   const classes = useStyles();
 
-  const size = 10;
-
   return (
-    <>
+    <Router>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -40,9 +41,9 @@ function App() {
             noWrap
             className={classes.toolbarTitle}
           >
-            <Link variant="h5" color="textPrimary" href="/">
+            <TextLink component={Link} variant="h5" color="textPrimary" to="/">
               Nonograms
-            </Link>
+            </TextLink>
           </Typography>
           <nav>
             {/* <Link
@@ -56,13 +57,21 @@ function App() {
           </nav>
         </Toolbar>
       </AppBar>
-      <div className={classes.toolbarOffset} />
+      <Box className={classes.toolbarOffset} />
       <Container className={classes.container}>
-        <Box>
-          <Game size={size} key={size} />
-        </Box>
+        <Switch>
+          <Route exact={true} path="/">
+            <GamePicker />
+          </Route>
+          <Route path="/game/:id">
+            <Game />
+          </Route>
+          <Route path="/builder">
+            <GridBuilder />
+          </Route>
+        </Switch>
       </Container>
-    </>
+    </Router>
   );
 }
 

@@ -1,4 +1,4 @@
-import { createContext, useState, useEffect } from 'react';
+import { createContext, useEffect, useRef } from 'react';
 
 const GridMouseContext = createContext({
   coordinates: null,
@@ -7,7 +7,12 @@ const GridMouseContext = createContext({
 });
 
 export function GridMouseContextProvider({ children }) {
-  const [coordinates, setCoordinates] = useState(null);
+  // const [coordinates, setCoordinates] = useState(null);
+  const coordinates = useRef(null);
+
+  const setCoordinates = (coords) => {
+    coordinates.current = coords;
+  };
 
   const onMouseDown = (rowIdx, colIdx) => {
     setCoordinates({ rowIdx, colIdx });
@@ -31,7 +36,9 @@ export function GridMouseContextProvider({ children }) {
   });
 
   return (
-    <GridMouseContext.Provider value={{ coordinates, onMouseDown, onMouseUp }}>
+    <GridMouseContext.Provider
+      value={{ coordinates: coordinates, onMouseDown, onMouseUp }}
+    >
       {children}
     </GridMouseContext.Provider>
   );

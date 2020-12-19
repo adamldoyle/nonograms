@@ -1,9 +1,19 @@
-import { Fragment, useState, useEffect, useContext, memo } from 'react';
+import {
+  Fragment,
+  useState,
+  useEffect,
+  useContext,
+  memo,
+  useMemo,
+} from 'react';
 import Button from '@material-ui/core/Button';
+import Checkbox from '@material-ui/core/Checkbox';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
 import { makeStyles } from '@material-ui/core/styles';
 import CloseIcon from '@material-ui/icons/Close';
 import ClickModeContext, { ClickMode } from '../../context/ClickModeContext';
 import GridMouseContext from '../../context/GridMouseContext';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const useCellStyles = makeStyles({
   cell: ({ rowIdx, colIdx, solved, gridWidth, gridHeight }) => {
@@ -39,23 +49,9 @@ const useCellStyles = makeStyles({
       verticalAlign: 'bottom',
     };
   },
-  cellFill: ({ cellDimension, cellMode, error, solved, solutionColor }) => {
-    let backgroundColor = null;
-    let color = null;
-    if (error) {
-      backgroundColor = '#cc0000';
-    } else if (solved && cellMode === CellMode.On) {
-      backgroundColor = solutionColor;
-    } else if (cellMode === CellMode.On) {
-      backgroundColor = '#444444';
-    }
-    if (cellMode === CellMode.X) {
-      color = '#444444';
-    }
+  cellFill: ({ cellDimension }) => {
     return {
       position: 'relative',
-      backgroundColor,
-      color,
       width: cellDimension,
       height: cellDimension,
     };
@@ -111,7 +107,7 @@ const getNumbers = (rowIdx, colIdx, solution) => {
       tally = 0;
     }
   }
-  if (tally > 0) {
+  if (tally > 0 || numbers.length === 0) {
     numbers.push(tally);
   }
   return numbers;
@@ -132,119 +128,146 @@ const CellMode = {
   X: 2,
 };
 
-function Cell({
-  rowIdx,
-  colIdx,
-  solution,
-  clickMode,
-  cellDimension,
-  dispatch,
-  solved,
-}) {
-  const { coordinates, onMouseDown, onMouseUp } = useContext(GridMouseContext);
-
-  const shouldBeOn = solution[rowIdx][colIdx];
-  const [cellMode, setCellMode] = useState(CellMode.Off);
-  const [error, setError] = useState(false);
-
-  const classes = useCellStyles({
+const Cell = memo(
+  ({
     rowIdx,
     colIdx,
-    gridWidth: solution[0].length,
-    gridHeight: solution.length,
+    solution,
+    clickMode,
     cellDimension,
-    cellMode,
-    error,
+    dispatch,
     solved,
-    solutionColor: solution[rowIdx][colIdx]?.color ?? '#229922',
-  });
+    initialCellData,
+    hideErrors,
+  }) => {
+    const { coordinates, onMouseDown, onMouseUp } = useContext(
+      GridMouseContext,
+    );
 
-  const adjustCell = () => {
-    let newCellMode = cellMode;
-    let newError = error;
-    switch (clickMode) {
-      case ClickMode.Pencil:
-        if (coordinates === null || cellMode === CellMode.Off) {
-          newCellMode = CellMode.On;
-          newError = !shouldBeOn;
-        }
-        break;
-      case ClickMode.X:
-        if (coordinates === null || cellMode === CellMode.Off) {
-          newCellMode = CellMode.X;
-          newError = shouldBeOn;
-        }
-        break;
-      case ClickMode.Eraser:
-        newCellMode = CellMode.Off;
-        newError = false;
-        break;
-      default:
-        break;
-    }
-    setCellMode(newCellMode);
-    setError(newError);
-    dispatch({
-      type: 'cell:toggle',
-      payload: {
-        rowIdx,
-        colIdx,
-        cellMode: newCellMode,
-        error: newError,
-      },
+    const shouldBeOn = solution[rowIdx][colIdx];
+    const [cellMode, setCellMode] = useState(initialCellData.cellMode);
+    const [error, setError] = useState(initialCellData.error);
+
+    const classes = useCellStyles({
+      rowIdx,
+      colIdx,
+      gridWidth: solution[0].length,
+      gridHeight: solution.length,
+      cellDimension,
+      cellMode,
+      error,
+      solved,
+      solutionColor: solution[rowIdx][colIdx]?.color ?? '#229922',
     });
-  };
 
-  const handleMouseDown = (event) => {
-    event.preventDefault();
-    onMouseDown(rowIdx, colIdx);
-    adjustCell();
-  };
+    const adjustCell = () => {
+      if (solved) {
+        return;
+      }
 
-  const handleMouseUp = (event) => {
-    event.preventDefault();
-    onMouseUp(rowIdx, colIdx);
-  };
+      let newCellMode = cellMode;
+      let newError = error;
+      switch (clickMode) {
+        case ClickMode.Pencil:
+          if (coordinates.current === null || cellMode === CellMode.Off) {
+            newCellMode = CellMode.On;
+            newError = !shouldBeOn;
+          }
+          break;
+        case ClickMode.X:
+          if (coordinates.current === null || cellMode === CellMode.Off) {
+            newCellMode = CellMode.X;
+            newError = shouldBeOn;
+          }
+          break;
+        case ClickMode.Eraser:
+          newCellMode = CellMode.Off;
+          newError = false;
+          break;
+        default:
+          break;
+      }
+      setCellMode(newCellMode);
+      setError(newError);
+      dispatch({
+        type: 'cell:toggle',
+        payload: {
+          rowIdx,
+          colIdx,
+          cellMode: newCellMode,
+          error: newError,
+        },
+      });
+    };
 
-  const handleMouseOver = (event) => {
-    event.preventDefault();
-    if (
-      coordinates &&
-      (rowIdx === coordinates.rowIdx || colIdx === coordinates.colIdx)
-    ) {
+    const handleMouseDown = (event) => {
+      event.preventDefault();
       adjustCell();
+      onMouseDown(rowIdx, colIdx);
+    };
+
+    const handleMouseUp = (event) => {
+      event.preventDefault();
+      onMouseUp(rowIdx, colIdx);
+    };
+
+    const handleMouseOver = (event) => {
+      event.preventDefault();
+      if (
+        coordinates.current &&
+        (rowIdx === coordinates.current.rowIdx ||
+          colIdx === coordinates.current.colIdx)
+      ) {
+        adjustCell();
+      }
+    };
+
+    let backgroundColor = null;
+    let color = null;
+    if (error && !hideErrors) {
+      backgroundColor = '#cc0000';
+    } else if (!error && solved && cellMode === CellMode.On) {
+      backgroundColor = solution[rowIdx][colIdx]?.color ?? '#229922';
+    } else if (cellMode === CellMode.On) {
+      backgroundColor = '#444444';
     }
-  };
+    if (cellMode === CellMode.X) {
+      color = '#444444';
+    }
 
-  return (
-    <td className={classes.cell}>
-      <div className={classes.cellFill}>
-        {cellMode === CellMode.X && !solved && (
-          <CloseIcon className={classes.xIcon} />
-        )}
-        <div className={classes.cellClick}
-          onClick={handleMouseOver}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onTouchEnd={handleMouseUp}
-          onMouseOver={handleMouseOver} />
-      </div>
-    </td>
-  );
-}
+    return (
+      <td className={classes.cell} style={{ backgroundColor, color }}>
+        <div className={classes.cellFill}>
+          {cellMode === CellMode.X && !solved && (
+            <CloseIcon className={classes.xIcon} />
+          )}
+          <div
+            className={classes.cellClick}
+            onClick={handleMouseDown}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleMouseDown}
+            onMouseUp={handleMouseUp}
+            onTouchEnd={handleMouseUp}
+            onMouseOver={handleMouseOver}
+          />
+        </div>
+      </td>
+    );
+  },
+);
 
-export default memo(function Grid({ solution, dispatch, solved }) {
+export default memo(function Grid({
+  solution,
+  dispatch,
+  solved,
+  initialCellData,
+}) {
   const { mode, setMode } = useContext(ClickModeContext);
+  const [hideErrors, setHideErrors] = useLocalStorage(false);
 
-  const [headerNumbers, setHeaderNumbers] = useState(() =>
-    getAllNumbers(solution),
-  );
   const [cellDimension, setCellDimension] = useState(20);
 
-  useEffect(() => {
-    setHeaderNumbers(getAllNumbers(solution));
-  }, [solution]);
+  const headerNumbers = useMemo(() => getAllNumbers(solution), [solution]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -267,7 +290,7 @@ export default memo(function Grid({ solution, dispatch, solved }) {
     evt.preventDefault();
     let currentElementTouched = document.elementFromPoint(
       evt.touches[0].pageX,
-      evt.touches[0].pageY
+      evt.touches[0].pageY,
     );
     while (currentElementTouched && !currentElementTouched.click) {
       currentElementTouched = currentElementTouched.parentElement;
@@ -275,7 +298,7 @@ export default memo(function Grid({ solution, dispatch, solved }) {
     if (currentElementTouched) {
       currentElementTouched.click();
     }
-  }
+  };
 
   return (
     <table cellPadding={0} cellSpacing={0}>
@@ -290,30 +313,45 @@ export default memo(function Grid({ solution, dispatch, solved }) {
                 alignItems: 'flex-end',
               }}
             >
-              <Button
-                className={classes.modeButton}
-                variant="contained"
-                color={mode === ClickMode.Pencil ? 'primary' : 'default'}
-                onClick={() => setMode(ClickMode.Pencil)}
-              >
-                <span className={classes.underline}>P</span>encil
-              </Button>
-              <Button
-                className={classes.modeButton}
-                variant="contained"
-                color={mode === ClickMode.X ? 'primary' : 'default'}
-                onClick={() => setMode(ClickMode.X)}
-              >
-                <span className={classes.underline}>X</span>
-              </Button>
-              <Button
-                className={classes.modeButton}
-                variant="contained"
-                color={mode === ClickMode.Eraser ? 'primary' : 'default'}
-                onClick={() => setMode(ClickMode.Eraser)}
-              >
-                <span className={classes.underline}>E</span>raser
-              </Button>
+              {!solved && (
+                <>
+                  <Button
+                    className={classes.modeButton}
+                    variant="contained"
+                    color={mode === ClickMode.Pencil ? 'primary' : 'default'}
+                    onClick={() => setMode(ClickMode.Pencil)}
+                  >
+                    <span className={classes.underline}>P</span>encil
+                  </Button>
+                  <Button
+                    className={classes.modeButton}
+                    variant="contained"
+                    color={mode === ClickMode.X ? 'primary' : 'default'}
+                    onClick={() => setMode(ClickMode.X)}
+                  >
+                    <span className={classes.underline}>X</span>
+                  </Button>
+                  <Button
+                    className={classes.modeButton}
+                    variant="contained"
+                    color={mode === ClickMode.Eraser ? 'primary' : 'default'}
+                    onClick={() => setMode(ClickMode.Eraser)}
+                  >
+                    <span className={classes.underline}>E</span>raser
+                  </Button>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        color="primary"
+                        checked={hideErrors}
+                        onChange={() => setHideErrors(!hideErrors)}
+                      />
+                    }
+                    label="Hide errors"
+                    labelPlacement="start"
+                  />
+                </>
+              )}
             </div>
           </td>
           {solution[0].map((col, colIdx) => (
@@ -343,6 +381,8 @@ export default memo(function Grid({ solution, dispatch, solved }) {
                   cellDimension={cellDimension}
                   dispatch={dispatch}
                   solved={solved}
+                  initialCellData={initialCellData[rowIdx][colIdx]}
+                  hideErrors={hideErrors}
                 />
               ))}
             </tr>
