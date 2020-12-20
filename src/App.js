@@ -1,15 +1,12 @@
-import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Link } from 'react-router-dom';
 import CssBaseline from '@material-ui/core/CssBaseline';
-import Container from '@material-ui/core/Container';
 import Box from '@material-ui/core/Box';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import TextLink from '@material-ui/core/Link';
 import { makeStyles } from '@material-ui/core/styles';
-import Game from './components/Game';
-import GamePicker from './components/GamePicker';
-import GridBuilder from './components/GridBuilder';
+import PageContainer from './components/PageContainer';
 
 const useStyles = makeStyles((theme) => ({
   appBar: { borderBottom: `1px solid ${theme.palette.divider}` },
@@ -17,10 +14,6 @@ const useStyles = makeStyles((theme) => ({
   toolbarTitle: { flexGrow: 1 },
   link: { margin: theme.spacing(1, 1.5) },
   toolbarOffset: theme.mixins.toolbar,
-  container: {
-    marginTop: 20,
-    overflow: 'scroll',
-  },
 }));
 
 function App() {
@@ -59,19 +52,7 @@ function App() {
         </Toolbar>
       </AppBar>
       <Box className={classes.toolbarOffset} />
-      <Container className={classes.container}>
-        <Switch>
-          <Route exact={true} path="/">
-            <GamePicker />
-          </Route>
-          <Route path="/game/:id">
-            <Game />
-          </Route>
-          <Route path="/builder">
-            <GridBuilder />
-          </Route>
-        </Switch>
-      </Container>
+      <PageContainer />
     </Router>
   );
 }

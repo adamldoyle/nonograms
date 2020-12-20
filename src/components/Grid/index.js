@@ -47,15 +47,15 @@ const useCellStyles = makeStyles({
       borderBottom,
       borderLeft,
       verticalAlign: 'bottom',
+      touchAction: 'none',
     };
   },
-  cellFill: ({ cellDimension }) => {
-    return {
-      position: 'relative',
-      width: cellDimension,
-      height: cellDimension,
-    };
-  },
+  cellFill: ({ cellDimension }) => ({
+    position: 'relative',
+    width: cellDimension,
+    height: cellDimension,
+    touchAction: 'none',
+  }),
   cellClick: ({ cellDimension }) => ({
     position: 'absolute',
     top: 2,
@@ -280,7 +280,7 @@ export default memo(function Grid({
 
   useEffect(() => {
     const handleResize = () => {
-      const widthSize = window.innerWidth / (solution[0].length * 1.5);
+      const widthSize = (window.innerWidth - 50) / (solution[0].length * 1.5);
       const heightSize = window.innerHeight / (solution.length * 1.5);
       setCellDimension(
         Math.max(20, Math.floor(Math.min(widthSize, heightSize))),
