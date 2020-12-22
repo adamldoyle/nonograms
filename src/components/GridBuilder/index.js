@@ -42,6 +42,7 @@ export default function GridBuilder() {
           return {
             ...state,
             cellData: buildEmptyCellData(action.payload.size),
+            solution: buildEmptySolution(size),
           };
         case 'cell:toggle':
           const oldSolution = state.solution;

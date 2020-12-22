@@ -9,6 +9,7 @@ import { v4 } from 'uuid';
 import useLocalStorage from '../../hooks/useLocalStorage';
 import generateRandomGrid from '../../utils/generateRandomGrid';
 import GridPreview from '../GridPreview';
+import * as christmas from '../../data/collections/christmas';
 
 const useStyles = makeStyles({
   choices: {
@@ -62,6 +63,19 @@ export default function GamePicker() {
 
   const createRandomGame = (size) => {
     const grid = generateRandomGrid(size);
+    createNewGame(grid);
+  };
+
+  const createFromCollection = (collection) => {
+    const grid = collection.data
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line)
+      .map((line) =>
+        line
+          .split('')
+          .map((item) => (item === 'x' ? { color: collection.color } : null)),
+      );
     createNewGame(grid);
   };
 
@@ -138,6 +152,31 @@ export default function GamePicker() {
         ),
         onClick: () => continueGame(game),
       })),
+    },
+    {
+      label: 'Merry Christmas',
+      choices: [
+        {
+          label: 'One',
+          onClick: () => createFromCollection(christmas.snowflake),
+        },
+        {
+          label: 'Two',
+          onClick: () => createFromCollection(christmas.gift),
+        },
+        {
+          label: 'Three',
+          onClick: () => createFromCollection(christmas.snowman),
+        },
+        {
+          label: 'Four',
+          onClick: () => createFromCollection(christmas.tree),
+        },
+        {
+          label: 'Five',
+          onClick: () => createFromCollection(christmas.reindeer),
+        },
+      ],
     },
     {
       label: 'Random',
