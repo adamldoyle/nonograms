@@ -36,7 +36,7 @@ function App() {
             className={classes.toolbarTitle}
           >
             <TextLink component={Link} variant="h5" color="textPrimary" to="/">
-              Nonograms
+              Mindygrams
             </TextLink>
           </Typography>
           <nav>
